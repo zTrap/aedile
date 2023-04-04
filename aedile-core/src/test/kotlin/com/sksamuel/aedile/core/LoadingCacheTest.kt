@@ -292,7 +292,7 @@ class LoadingCacheTest : FunSpec() {
       }
 
       test("Cache should support invalidate") {
-         val cache: LoadingCache<String, String> = cacheBuilder<String, String>().build {
+         val cache: LoadingCacheFacade<String, String> = cacheBuilder<String, String>().build {
             delay(1)
             "bar"
          }
@@ -303,7 +303,7 @@ class LoadingCacheTest : FunSpec() {
       }
 
       test("Cache should support contains") {
-         val cache: LoadingCache<String, String> = cacheBuilder<String, String>().build {
+         val cache: LoadingCacheFacade<String, String> = cacheBuilder<String, String>().build {
             delay(1)
             "bar"
          }

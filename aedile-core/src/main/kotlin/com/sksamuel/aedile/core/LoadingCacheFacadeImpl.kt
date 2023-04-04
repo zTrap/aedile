@@ -2,6 +2,7 @@ package com.sksamuel.aedile.core
 
 import com.github.benmanes.caffeine.cache.AsyncCache
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache
+import java.util.concurrent.Executor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -11,15 +12,15 @@ import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 import kotlin.coroutines.coroutineContext
 
-class LoadingCache<K, V>(
+class LoadingCacheFacadeImpl<K, V>(
    private val defaultScope: CoroutineScope,
    private val useCallingContext: Boolean,
-   private val cache: AsyncLoadingCache<K, V>
-) {
+   private val cache: AsyncLoadingCache<K, V>,
+) : LoadingCacheFacade<K, V> {
 
-   fun underlying(): AsyncLoadingCache<K, V> = cache
+   override fun underlying(): AsyncLoadingCache<K, V> = cache
 
-   suspend fun contains(key: K): Boolean {
+   override suspend fun contains(key: K): Boolean {
       return cache.getIfPresent(key)?.await() != null
    }
 
@@ -27,7 +28,7 @@ class LoadingCache<K, V>(
     * Returns the value associated with key in this cache, or null if there is no cached future for key.
     * This method will suspend while the value is fetched.
     */
-   suspend fun getIfPresent(key: K): V? {
+   override suspend fun getIfPresent(key: K): V? {
       return cache.getIfPresent(key)?.await()
    }
 
@@ -38,7 +39,7 @@ class LoadingCache<K, V>(
     * @param key the key to lookup in the cache
     * @return the value in the cache or computed from the global loading function.
     */
-   suspend fun get(key: K): V {
+   override suspend fun get(key: K): V {
       return cache.get(key).await()
    }
 
@@ -51,7 +52,7 @@ class LoadingCache<K, V>(
     *
     * See full docs at [AsyncLoadingCache.getAll].
     */
-   suspend fun getAll(keys: Collection<K>): Map<K, V> {
+   override suspend fun getAll(keys: Collection<K>): Map<K, V> {
       return cache.getAll(keys).await()
    }
 
@@ -67,7 +68,7 @@ class LoadingCache<K, V>(
     *
     * See full docs at [AsyncCache.getAll].
     */
-   suspend fun getAll(keys: Collection<K>, compute: suspend (Set<K>) -> Map<K, V>): Map<K, V> {
+   override suspend fun getAll(keys: Collection<K>, compute: suspend (Set<K>) -> Map<K, V>): Map<K, V> {
       val scope = scope()
       return cache.getAll(keys) { k, _ -> scope.async { compute(k.toSet()) }.asCompletableFuture() }.await()
    }
@@ -84,7 +85,7 @@ class LoadingCache<K, V>(
     *
     * If the suspendable computation throws, the entry will be automatically removed from this cache.
     */
-   suspend fun get(key: K, compute: suspend (K) -> V): V {
+   override suspend fun get(key: K, compute: suspend (K) -> V): V {
       val scope = scope()
       return cache.get(key) { k, _ -> scope.async { compute(k) }.asCompletableFuture() }.await()
    }
@@ -106,9 +107,6 @@ class LoadingCache<K, V>(
       return cache.get(key) { k, _ -> scope.async { compute(k) }.asCompletableFuture() }.await()
    }
 
-   @Deprecated("Use get", ReplaceWith("get(key, compute)"))
-   suspend fun getOrPut(key: K, compute: suspend (K) -> V): V = get(key, compute)
-
    /**
     * Associates a computed value with the given [key] in this cache.
     *
@@ -120,7 +118,7 @@ class LoadingCache<K, V>(
     * @param key the key to associate the computed value with
     * @param compute the suspendable function that generate the value.
     */
-   suspend fun put(key: K, compute: suspend () -> V) {
+   override suspend fun put(key: K, compute: suspend () -> V) {
       val scope = scope()
       cache.put(key, scope.async { compute() }.asCompletableFuture())
    }
@@ -131,29 +129,24 @@ class LoadingCache<K, V>(
     * If the cache previously contained a value associated with key,
     * the old value is replaced by the new value.
     */
-   fun put(key: K, value: V) {
+   override fun put(key: K, value: V) {
       cache.put(key, CompletableFuture.completedFuture(value))
    }
-
-   /**
-    * Equivalent to [put], but exists so that we can override the operator.
-    */
-   operator fun set(key: K, value: V) = put(key, value)
 
    /**
     * Returns a view of the entries in this map, requesting each value before returning the map.
     * Note: This requires a fetch on all keys before the map is returned. For a lazily built
     * map where each key is fetched as a suspendable call on demand, see [asDeferredMap].
     */
-   suspend fun asMap(): Map<K, V> {
+   override suspend fun asMap(): Map<K, V> {
       return cache.asMap().mapValues { it.value.await() }
    }
 
    /**
     * Returns a view of the entries stored in this cache as an immutable map.
     * Each value is fetched from the cache only when requested from the map.
-    * */
-   fun asDeferredMap(): Map<K, Deferred<V>> {
+    */
+   override fun asDeferredMap(): Map<K, Deferred<V>> {
       return cache.asMap().mapValues { it.value.asDeferred() }
    }
 
@@ -162,7 +155,7 @@ class LoadingCache<K, V>(
     * Will block until completed.
     * Behavior of the entry if currently being loaded is undefined.
     */
-   fun invalidate(key: K) {
+   override fun invalidate(key: K) {
       cache.synchronous().invalidate(key)
    }
 
@@ -171,7 +164,7 @@ class LoadingCache<K, V>(
     * Will block until completed.
     * Behavior of entries currently being loaded is undefined.
     */
-   fun invalidateAll() {
+   override fun invalidateAll() {
       cache.synchronous().invalidateAll()
    }
 
