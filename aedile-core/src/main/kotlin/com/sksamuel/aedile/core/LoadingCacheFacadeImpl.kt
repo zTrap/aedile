@@ -2,15 +2,14 @@ package com.sksamuel.aedile.core
 
 import com.github.benmanes.caffeine.cache.AsyncCache
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache
-import java.util.concurrent.Executor
+import java.util.concurrent.CompletableFuture
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.asDeferred
 import kotlinx.coroutines.future.await
-import java.util.concurrent.CompletableFuture
-import kotlin.coroutines.coroutineContext
 
 class LoadingCacheFacadeImpl<K, V>(
    private val defaultScope: CoroutineScope,
@@ -68,7 +67,7 @@ class LoadingCacheFacadeImpl<K, V>(
     *
     * See full docs at [AsyncCache.getAll].
     */
-   override suspend fun getAll(keys: Collection<K>, compute: suspend (Set<K>) -> Map<K, V>): Map<K, V> {
+   override suspend fun getAll(keys: Collection<K>, compute: suspend (Collection<K>) -> Map<K, V>): Map<K, V> {
       val scope = scope()
       return cache.getAll(keys) { k, _ -> scope.async { compute(k.toSet()) }.asCompletableFuture() }.await()
    }

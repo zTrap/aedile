@@ -4,10 +4,11 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.Expiry
 import com.github.benmanes.caffeine.cache.RemovalCause
 import com.github.benmanes.caffeine.cache.stats.StatsCounter
+import kotlin.time.Duration
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
-import kotlin.time.Duration
 
 data class Configuration<K, V>(
 
@@ -113,3 +114,7 @@ data class Configuration<K, V>(
 
    var scheduler: Scheduler? = null,
 )
+
+fun interface Scheduler {
+   fun schedule(command: () -> Unit, duration: Duration): Deferred<Unit>
+}

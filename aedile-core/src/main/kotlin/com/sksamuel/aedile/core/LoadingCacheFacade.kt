@@ -2,16 +2,6 @@ package com.sksamuel.aedile.core
 
 import com.github.benmanes.caffeine.cache.AsyncLoadingCache
 
-@Deprecated(
-   message = "Divided to api and implementation",
-   replaceWith = ReplaceWith(
-      "LoadingCacheWrapper<K, V>",
-      "com.sksamuel.aedile.core.LoadingCacheWrapper"
-   ),
-   level = DeprecationLevel.ERROR,
-)
-typealias LoadingCache<K, V> = LoadingCacheFacade<K, V>
-
 interface LoadingCacheFacade<K, V> : CacheFacade<K, V> {
 
    override fun underlying(): AsyncLoadingCache<K, V>

@@ -1,13 +1,13 @@
 package com.sksamuel.aedile.core
 
 import com.github.benmanes.caffeine.cache.Caffeine
+import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.toJavaDuration
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.nanoseconds
-import kotlin.time.toJavaDuration
 
 /**
  * Creates a [Builder] which by default uses the coroutine context from the caller for get/getall compute overrides.
@@ -19,7 +19,9 @@ fun <K, V> cacheBuilder(configure: Configuration<K, V>.() -> Unit = {}): Builder
    c.configure()
    val caffeine = Caffeine.newBuilder()
 
-   val defaultScope = c.scope ?: CoroutineScope(c.dispatcher + CoroutineName("Aedile-Caffeine-Scope") + SupervisorJob())
+   val defaultScope = c.scope ?: CoroutineScope(
+      context = c.dispatcher + CoroutineName("Aedile-Caffeine-Scope") + SupervisorJob()
+   )
 
    c.evictionListener.let { listener ->
       caffeine.evictionListener<K, V> { key, value, cause ->

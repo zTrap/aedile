@@ -3,16 +3,6 @@ package com.sksamuel.aedile.core
 import com.github.benmanes.caffeine.cache.AsyncCache
 import kotlinx.coroutines.Deferred
 
-@Deprecated(
-   message = "Divided to api and implementation",
-   replaceWith = ReplaceWith(
-      "CacheWrapper<K, V>",
-      "com.sksamuel.aedile.core.CacheWrapper"
-   ),
-   level = DeprecationLevel.ERROR,
-)
-typealias Cache<K, V> = CacheFacade<K, V>
-
 interface CacheFacade<K, V> {
 
    fun underlying(): AsyncCache<K, V>
