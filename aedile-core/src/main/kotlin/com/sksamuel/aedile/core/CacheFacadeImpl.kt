@@ -3,13 +3,13 @@ package com.sksamuel.aedile.core
 import com.github.benmanes.caffeine.cache.AsyncCache
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.asDeferred
 import kotlinx.coroutines.future.await
-import kotlin.coroutines.coroutineContext
 
 class CacheFacadeImpl<K, V>(
    private val defaultScope: CoroutineScope,
@@ -36,7 +36,7 @@ class CacheFacadeImpl<K, V>(
     * Returns the value associated with key in this cache or null if this cache does not
     * contain an entry for the key. This is a non-suspendable alternative to getIfPresent(key).
     */
-   fun getOrNull(key: K): V? {
+   override fun getOrNull(key: K): V? {
       return cache.synchronous().getIfPresent(key)
    }
 
@@ -52,7 +52,7 @@ class CacheFacadeImpl<K, V>(
     * @param compute the suspendable function to generate a value for the given key.
     * @return the present value, the computed value, or throws.
     */
-   suspend fun getOrNull(key: K, compute: suspend (K) -> V?): V? {
+   override suspend fun getOrNull(key: K, compute: suspend (K) -> V?): V? {
       val scope = scope()
       return cache.get(key) { k, _ -> scope.async { compute(k) }.asCompletableFuture() }.await()
    }

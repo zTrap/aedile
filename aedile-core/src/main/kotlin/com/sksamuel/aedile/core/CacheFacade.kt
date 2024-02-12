@@ -73,6 +73,26 @@ interface CacheFacade<K, V> {
    fun asDeferredMap(): Map<K, Deferred<V>>
 
    /**
+    * Returns the value associated with key in this cache or null if this cache does not
+    * contain an entry for the key. This is a non-suspendable alternative to getIfPresent(key).
+    */
+   fun getOrNull(key: K): V?
+
+   /**
+    * Returns the value associated with key in this cache, obtaining that value from the
+    * [compute] function if necessary. This function will suspend while the compute method
+    * is executed. If the suspendable computation throws, the exception will be propagated to the caller.
+    *
+    * If the specified key is not already associated with a value, attempts to compute its value asynchronously
+    * and enters it into this cache unless null.
+    *
+    * @param key the key to lookup in the cache
+    * @param compute the suspendable function to generate a value for the given key.
+    * @return the present value, the computed value, or throws.
+    */
+   suspend fun getOrNull(key: K, compute: suspend (K) -> V?): V?
+
+   /**
     * Returns the future of a map of the values associated with [keys], creating or retrieving
     * those values if necessary. The returned map contains entries that were already cached, combined
     * with newly loaded entries; it will never contain null keys or values. If the any of the

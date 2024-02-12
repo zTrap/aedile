@@ -90,6 +90,14 @@ class LoadingCacheFacadeImpl<K, V>(
    }
 
    /**
+    * Returns the value associated with key in this cache or null if this cache does not
+    * contain an entry for the key. This is a non-suspendable alternative to getIfPresent(key).
+    */
+   override fun getOrNull(key: K): V? {
+      return cache.synchronous().getIfPresent(key)
+   }
+
+   /**
     * Returns the value associated with key in this cache, obtaining that value from the
     * [compute] function if necessary. This function will suspend while the compute method
     * is executed. If the suspendable computation throws, the exception will be propagated to the caller.
@@ -101,7 +109,7 @@ class LoadingCacheFacadeImpl<K, V>(
     * @param compute the suspendable function to generate a value for the given key.
     * @return the present value, the computed value, or throws.
     */
-   suspend fun getOrNull(key: K, compute: suspend (K) -> V?): V? {
+   override suspend fun getOrNull(key: K, compute: suspend (K) -> V?): V? {
       val scope = scope()
       return cache.get(key) { k, _ -> scope.async { compute(k) }.asCompletableFuture() }.await()
    }
